@@ -14,7 +14,7 @@ pyee==11.1.0
 pytest==8.3.2
 pytest-base-url==2.1.0
 pytest-playwright==0.5.2
-python-dateutil==2.9.0.post0
+python-dateutil==2.8.2
 python-slugify==8.0.4
 pytz==2024.1
 requests==2.32.3
@@ -24,3 +24,4 @@ tomli==2.0.1
 typing_extensions==4.12.2
 tzdata==2024.1
 urllib3==2.2.2
+wakepy==0.9.1

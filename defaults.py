@@ -1,5 +1,5 @@
 # level-1 user constants
-MAX_TABS = 20
+MAX_TABS = 30
 CYCLE_TIME_HOURS = 1
 TAB_SWITCH_TIME = 1 * 60
 SHEETS_LINK = "https://docs.google.com/spreadsheets/d/1okTqKMkIB3F4nhUoYP6rYVml1qP4ZItTOK_OxHKeArU/edit?gid=0#gid=0"

@@ -5,6 +5,7 @@ from time import sleep, time
 import numpy as np
 import pandas as pd
 from playwright.sync_api import sync_playwright
+from wakepy import keep
 
 from constants import *
 from defaults import *
@@ -259,11 +260,11 @@ def run_linkedin_learning_automator():
             sheet_df = load_sheets_df(sheet_id)
             refresh_db(table_name, sheet_df)
             watch_url_list = fetch_watch_url_list(table_name)
-    except Exception as e:
-        print(f"Exception >> {str(e)} \nAutomate another time....\nExiting Cleanly, Bye :)")
+    except Exception as exp:
+        raise RuntimeError(str(exp))
 
 
-if __name__ == "__main__":
+def main():
     print(BREAK_LINE)
     print(f"Welcome to LinkedIn Learning Automator")
     print("Displaying the defaults (change if required in the defaults file)")
@@ -276,4 +277,18 @@ if __name__ == "__main__":
           f"LinkedIn Cookie: {LI_AT_COOKIE}\n"
           f"SQLite DB Path: {SQLITE_DB_PATH}")
     print(BREAK_LINE)
-    run_linkedin_learning_automator()
+    try:
+        run_linkedin_learning_automator()
+    except Exception as e:
+        print(f"Exception >> {str(e)} \nAutomate another time....\nExiting Cleanly, Bye :)")
+        now = datetime.now()
+        print(BREAK_LINE)
+        print(f"Exiting at {now.strftime('%I:%M %p')}\n")
+        print(BREAK_LINE)
+        print(f"Starting over....")
+        main()
+
+
+if __name__ == "__main__":
+    with keep.presenting():
+        main()
