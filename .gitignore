@@ -1,0 +1,4 @@
+.idea/
+.venv/
+automator.db
+__pycache__/
