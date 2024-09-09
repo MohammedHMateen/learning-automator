@@ -11,31 +11,52 @@ from constants import *
 from defaults import *
 
 
-def quick_toggle_tabs(tab_object_list):
-    for tab in tab_object_list:
-        tab.bring_to_front()
+def quick_toggle_tabs(tab_list):
+    for tab_object in tab_list:
+        tab_object.tab.bring_to_front()
+        media_player = tab_object.tab.query_selector('div.classroom-media-player')
+        incomplete_player_selector = 'div.media-screens-course-incomplete__content'
+        incomplete_course_selector = incomplete_player_selector + '>a'
+        incomplete_player = tab_object.tab.query_selector(incomplete_player_selector)
+        incomplete_course = tab_object.tab.query_selector(incomplete_course_selector)
+
+        # handle incomplete course
+        if media_player:
+            if incomplete_player and incomplete_course:
+                tab_object.last_course = tab_object.tab.url
+                tab_object.resume_time = time()
+                tab_object.tab.click(incomplete_course_selector)
+                sleep(RETRY_SLEEP)
+
+            if tab_object.last_course and time() - tab_object.resume_time > SWITCH_TO_LAST_COURSE_MINUTES:
+                tab_object.resume_time = time()
+                tab_object.tab.goto(tab_object.last_course)
+
         for _ in range(MAX_RETRIES):
-            if tab.query_selector('div.classroom-media-player'):
-                break
-            tab.reload()
-            sleep(RETRY_SLEEP)
+            if not media_player:
+                tab_object.tab.reload()
+                sleep(RETRY_SLEEP)
+
         sleep(QUICK_TOGGLE_SCREEN_SLEEP)
 
 
-def toggle_tabs(tab_object_list):
+def toggle_tabs(tab_list):
     start_time = time()
     cycle_time_seconds = CYCLE_TIME_HOURS * 60 * 60
     # Keep switching tabs every SWITCH_TIME
     while time() - start_time < cycle_time_seconds:
-        for tab in tab_object_list:
-            tab.bring_to_front()
+        for tab_object in tab_list:
+            tab_object.tab.bring_to_front()
             sleep(TAB_SWITCH_TIME)
         else:
-            quick_toggle_tabs(tab_object_list)
+            quick_toggle_tabs(tab_list)
 
 
 def set_video_playback_settings(page):
-    if page.query_selector('div.classroom-media-player'):
+    media_player = page.query_selector('div.classroom-media-player')
+    mute_button = page.query_selector('button.vjs-mute-control>span.vjs-control-text')
+    playback_button = page.query_selector('button.vjs-playback-rate')
+    if media_player and mute_button and playback_button:
         # mute if required
         if page.locator('button.vjs-mute-control>span.vjs-control-text').text_content() == 'Mute':
             page.click('button.vjs-vol-0')
@@ -62,9 +83,9 @@ def launch_browser_context(playwright):
     )
 
 
-def close_tabs(tab_object_list):
-    for tab in tab_object_list:
-        tab.close()
+def close_tabs(tab_list):
+    for tab_object in tab_list:
+        tab_object.tab.close()
 
 
 def open_links(watch_url_list: list):
@@ -81,18 +102,20 @@ def open_links(watch_url_list: list):
         cookie_page.reload()
 
         # open courses in new tabs
-        tab_object_list = []
+        tab_list = []
         for index, url in enumerate(watch_url_list):
-            tab_object_list.append(context.new_page())
-            tab_object_list[index].goto(url)
+            tab_list.append(Tab(context.new_page()))
+            tab_list[index].tab.goto(url)
             sleep(OPEN_TAB_SLEEP)
-            set_video_playback_settings(tab_object_list[index])
+            if index == 0:
+                sleep(OPEN_TAB_SLEEP)
+                set_video_playback_settings(tab_list[index].tab)
 
-        quick_toggle_tabs(tab_object_list)
+        quick_toggle_tabs(tab_list)
         shrink_browser(cookie_page)
         cookie_page.close()
-        toggle_tabs(tab_object_list)
-        close_tabs(tab_object_list)
+        toggle_tabs(tab_list)
+        close_tabs(tab_list)
         context.close()
 
 
@@ -111,7 +134,7 @@ def load_sheets_df(sheet_id):
     sheets_df[SheetHeader.ATTEMPT.value] = 0
     # replace duration nan with default course duration
     sheets_df['course_hour'] = sheets_df['course_hour'].replace([None, '', np.nan], APPROX_COURSE_DURATION_HOURS)
-    sheets_df[SheetHeader.MAX_ATTEMPT.value] = sheets_df['course_hour'] // CYCLE_TIME_HOURS
+    sheets_df[SheetHeader.MAX_ATTEMPT.value] = sheets_df['course_hour'].astype(int) // CYCLE_TIME_HOURS
     sheets_df[SheetHeader.MAX_ATTEMPT.value] = sheets_df[SheetHeader.MAX_ATTEMPT.value].clip(upper=5)
     sheets_df[SheetHeader.MAX_ATTEMPT.value] = sheets_df[SheetHeader.MAX_ATTEMPT.value].astype(int)
     sheets_df = sheets_df[[SheetHeader.URL.value, SheetHeader.CERTIFIED.value, SheetHeader.ATTEMPT.value,
@@ -241,6 +264,15 @@ def show_cycle_info(watch_url_list):
     print(BREAK_LINE)
 
 
+def watch_linkedin_courses(watch_url_list, table_name):
+    show_cycle_info(watch_url_list)
+    update_certified_status(table_name, watch_url_list, Status.IN_PROGRESS.value)
+    open_links(watch_url_list)
+    increment_attempt(table_name, watch_url_list)
+    update_certified_status(table_name, watch_url_list, Status.NO.value)
+    delete_maxed_attempts(table_name)
+
+
 def run_linkedin_learning_automator():
     try:
         course_sheet = SHEETS_LINK.strip()
@@ -251,12 +283,7 @@ def run_linkedin_learning_automator():
         populate_sqlite_db(table_name, sheet_df)
         watch_url_list = fetch_watch_url_list(table_name)
         while watch_url_list:
-            show_cycle_info(watch_url_list.copy())
-            update_certified_status(table_name, watch_url_list, Status.IN_PROGRESS.value)
-            open_links(watch_url_list)
-            increment_attempt(table_name, watch_url_list)
-            update_certified_status(table_name, watch_url_list, Status.NO.value)
-            delete_maxed_attempts(table_name)
+            watch_linkedin_courses(watch_url_list.copy(), table_name)
             sheet_df = load_sheets_df(sheet_id)
             refresh_db(table_name, sheet_df)
             watch_url_list = fetch_watch_url_list(table_name)
