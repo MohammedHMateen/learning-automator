@@ -1,0 +1,7 @@
+# level-1 user constants
+MAX_TABS = 15
+CYCLE_TIME_HOURS = 1
+TAB_SWITCH_TIME = 1 * 60
+SHEETS_LINK = "https://docs.google.com/spreadsheets/d/1okTqKMkIB3F4nhUoYP6rYVml1qP4ZItTOK_OxHKeArU/edit?gid=0#gid=0"
+LI_AT_COOKIE = '''AQEFARABAAAAABFWgo8AAAGR1MvC3gAAAZH42RD9VgAAs3VybjpsaTplbnRlcnByaXNlQXV0aFRva2VuOmVKeGpaQUFDdmttTmwwQzB3TlhMOTBBMHY5ajZTNHdnUnJsZTRTa3dRNkJmdHBxQkdRRFpmUWxOXnVybjpsaTplbnRlcnByaXNlUHJvZmlsZToodXJuOmxpOmVudGVycHJpc2VBY2NvdW50OjI0NDQ4MjUxNCwyODI0NDg4NjIpXnVybjpsaTptZW1iZXI6ODQwNDI3MDE3dkdlwK0KfVstPs0QHCuMHLc2hLoXK_jThVz5zzSRBNR0KJXJcAV8T6jvyIMVbMmogEMzw7L-zam_JYKnaK2QixnBODFeUr99jrM2S-xUdhtS_IGVBbsOib-Z0qXMOhJbNDWk5urMnPDSvPSJrTvB7XttCNI51KMWEN_cfiwnN7249CiYYejVlxXVGLzGUN2Rsg-tJw'''
+CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
